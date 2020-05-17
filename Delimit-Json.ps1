@@ -29,41 +29,43 @@ function Delimit-Json
     Process
     {
         # split by square brackets, braces and quotes.
-        $concatenated -split '([\{\}\[\]\"])' |
-        where { $_.Length -gt 0 } | 
-        foreach {
-            # reassemble the json object in progress
-            $reconstructed += $_
-
-            # update the $betweenQuotes state
-            if($betweenQuotes)
+        foreach($t in ($concatenated -split '([\{\}\[\]\"])'))
+        {
+            if($t.Length -gt 0)
             {
-                # only end if the last character was a non-escaped double quote
-                if($reconstructed[-1] -eq '"' -and $reconstructed[-2] -ne '\'){ $betweenQuotes = $false }
-            }
-            else
-            {
-                if($reconstructed[-1] -eq '"'){ $betweenQuotes = $true }
-            }
+                # reassemble the json object in progress
+                $reconstructed += $t
 
-            # only look at nesting levels if we did not end somewhere within double quoted string
-            if(!$betweenQuotes)
-            {
-                $lastChar = $reconstructed[-1]
-
-                if($lastChar -eq '{' -or $lastChar -eq '[')
-                { 
-                    $nestLevel++ 
+                # update the $betweenQuotes state
+                if($betweenQuotes)
+                {
+                    # only end if the last character was a non-escaped double quote
+                    if($reconstructed[-1] -eq '"' -and $reconstructed[-2] -ne '\'){ $betweenQuotes = $false }
                 }
-                elseif($lastChar -eq '}' -or $lastChar -eq ']')
-                { 
-                    $nestLevel--
+                else
+                {
+                    if($reconstructed[-1] -eq '"'){ $betweenQuotes = $true }
+                }
 
-                    if($nestLevel -eq 0)
-                    {
-                        # nesting level reached zero, output the reconstructed string and restart
-                        $reconstructed
-                        $reconstructed = ''
+                # only look at nesting levels if we did not end somewhere within double quoted string
+                if(!$betweenQuotes)
+                {
+                    $lastChar = $reconstructed[-1]
+
+                    if($lastChar -eq '{' -or $lastChar -eq '[')
+                    { 
+                        $nestLevel++ 
+                    }
+                    elseif($lastChar -eq '}' -or $lastChar -eq ']')
+                    { 
+                        $nestLevel--
+
+                        if($nestLevel -eq 0)
+                        {
+                            # nesting level reached zero, output the reconstructed string and restart
+                            $reconstructed
+                            $reconstructed = ''
+                        }
                     }
                 }
             }
