@@ -22,10 +22,9 @@ function Delimit-Json
     )
     Begin
     {
-        $reconstructed = ""
+        $reconstructed = ''
         $betweenQuotes = $false
-        $braceLevel = 0
-        $squareLevel = 0
+        $nestLevel = 0
     }
     Process
     {
@@ -51,17 +50,21 @@ function Delimit-Json
             if(!$betweenQuotes)
             {
                 $lastChar = $reconstructed[-1]
-                $checkTerminal = $false
 
-                if($lastChar -eq '{'){ $braceLevel+=1 } 
-                elseif($lastChar -eq '['){ $squareLevel+=1 } 
-                elseif($lastChar -eq '}'){ $braceLevel-=1; $checkTerminal=$true }
-                elseif($lastChar -eq ']'){ $squareLevel-=1; $checkTerminal=$true }
+                if($lastChar -eq '{' -or $lastChar -eq '[')
+                { 
+                    $nestLevel++ 
+                }
+                elseif($lastChar -eq '}' -or $lastChar -eq ']')
+                { 
+                    $nestLevel--
 
-                if($checkTerminal -and $braceLevel -eq 0 -and $squareLevel -eq 0)
-                {
-                    $reconstructed
-                    $reconstructed = ""
+                    if($nestLevel -eq 0)
+                    {
+                        # nesting level reached zero, output the reconstructed string and restart
+                        $reconstructed
+                        $reconstructed = ''
+                    }
                 }
             }
         }
